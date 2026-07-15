@@ -15,8 +15,8 @@ AI_MODEL=gpt-4.1-mini
 The agent also needs the same prerequisites as the rest of the dApp:
 
 - Extension stack running (`bash ./scripts/start-services.sh`)
-- x402 gateway: `go run ./tools/cmd/x402-gateway -contract $INSTRUCTION_SENDER`
-- `NEXT_PUBLIC_X402_GATEWAY_URL` pointing at the gateway (default `http://localhost:7703`)
+- Next.js dev server (`cd frontend && npm run dev`) — serves dApp and x402 gateway
+- `NEXT_PUBLIC_X402_GATEWAY_URL` pointing at Next.js (default `http://localhost:3000`)
 - Wallet on **Coston2** (chain 114) with **C2FLR**, **WPT** (premiums/payouts), and **feeToken** (x402 fetch/settle fees)
 
 ## Architecture

@@ -1,15 +1,8 @@
 {
   "mcpServers": {
     "weather-insurance": {
-      "type": "stdio",
-      "command": "npm",
-      "args": [
-        "run",
-        "mcp",
-        "--prefix",
-        "frontend"
-      ],
-      "env": {}
+      "type": "http",
+      "url": "http://localhost:3000/api/mcp"
     }
   }
 }

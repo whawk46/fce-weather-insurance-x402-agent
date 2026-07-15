@@ -72,8 +72,7 @@ fi
 # getWeather/requestSettlement are onlyGateway — only this address may call them.
 # Defaults to the deployer's own address (DEPLOYMENT_PRIVATE_KEY) so the existing
 # CLI tools (tools/cmd/settle, tools/cmd/run-test) keep working unmodified; set
-# GATEWAY_ADDRESS explicitly if the x402 HTTP gateway (tools/cmd/x402-gateway)
-# runs with its own separate key.
+# GATEWAY_ADDRESS explicitly if the Next.js x402 gateway runs with a separate key.
 
 if [[ -n "${INSTRUCTION_SENDER:-}" ]]; then
     : "${CHAIN_URL:?CHAIN_URL not set}"

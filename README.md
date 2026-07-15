@@ -46,26 +46,14 @@ cd frontend && npm install && npm run dev
 ```
 
 `getWeather`/`requestSettlement` are `onlyGateway` — the frontend's "Fetch weather" and
-"Settle" buttons go through the x402 gateway (`tools/cmd/x402-gateway`), not the
-contract directly. Start it in a separate terminal **before** using those features
-(`NEXT_PUBLIC_X402_GATEWAY_URL` in `frontend/.env.local` must point at it —
-default `http://localhost:7703`; synced by `scripts/sync-env.sh`):
+"Settle" buttons go through the x402 gateway (Next.js routes at `/x402/weather/*`), not the
+contract directly. The gateway runs in the same process as the dApp.
 
-```bash
-cd tools && go run ./cmd/x402-gateway
-```
-
-The gateway loads repo `.env` plus `config/extension.env` (`INSTRUCTION_SENDER`,
-`CHAIN_URL`, `EXT_PROXY_URL`). To sync frontend env and restart the gateway in one step:
-
-```bash
-./scripts/sync-env.sh --restart-gateway
-```
-
-The gateway's wallet (`DEPLOYMENT_PRIVATE_KEY`) must match the contract's
-`gateway()` address (set by `extension-setup.sh`). **Restart it** whenever you
-redeploy the contract or your tunnel URL changes — it holds those as fixed values
-from when it started.
+`NEXT_PUBLIC_X402_GATEWAY_URL` in `frontend/.env.local` must point at the Next.js origin
+(default `http://localhost:3000`; synced by `scripts/sync-env.sh`). The gateway wallet
+(`DEPLOYMENT_PRIVATE_KEY` from repo `.env`, server-side only) must match the contract's
+`gateway()` address (set by `extension-setup.sh`). **Restart `npm run dev`** whenever you
+redeploy the contract or your tunnel URL changes.
 
 Open [http://localhost:3000](http://localhost:3000), connect MetaMask on **Coston2** (chain id 114), and fund **C2FLR** + **WPT** for premiums.
 
@@ -77,13 +65,13 @@ Set `OPENAI_API_KEY` in `frontend/.env.local` (see `frontend/.env.local.example`
 
 ### MCP server (Cursor / external agents)
 
-The same tools are available as an MCP stdio server for Cursor and other MCP hosts:
+The same tools are available as an MCP URL endpoint when the dev server is running:
 
-```bash
-cd frontend && npm run mcp
+```
+http://localhost:3000/api/mcp
 ```
 
-Setup, Cursor config, and security notes: [docs/mcp-server.md](docs/mcp-server.md).
+Start with `cd frontend && npm run dev` — no separate MCP process needed for Cursor or Claude Code. Setup, Cursor/Claude config, and security notes: [docs/mcp-server.md](docs/mcp-server.md).
 
 The UI proxies TEE `/info` and `/action/result` through Next API routes (`EXT_PROXY_URL` server-side) to avoid browser CORS. Optional types-server decode UI uses port **8100** (exposed from `extension-tee` in Docker Compose).
 
@@ -102,7 +90,7 @@ The UI proxies TEE `/info` and `/action/result` through Next API routes (`EXT_PR
 
 ## Contract
 
-`contracts/InstructionSender.sol` defines `WeatherInsurance`: `buyPolicy`, `buyPolicyPrivate`, `settle`, ERC-20 premiums/payouts via `PAY_TOKEN`. `requestSettlement`/`getWeather` are `onlyGateway` — callable only by the registered `gateway` address (`setGateway`) — and pull an optional per-call `feeToken` fee (any ERC-20, e.g. FXRP or a test USDT0) atomically via `transferFrom` from the payer the gateway names (`setFeeToken`/`setFeeRecipient`/`setFetchFee`/`setSettleFee`). See [`tools/cmd/x402-gateway`](tools/cmd/x402-gateway) — the HTTP facilitator that fronts these two with a `402 Payment Required` → approve → retry handshake; the contract's own `transferFrom` is the actual enforcement, not the HTTP layer.
+`contracts/InstructionSender.sol` defines `WeatherInsurance`: `buyPolicy`, `buyPolicyPrivate`, `settle`, ERC-20 premiums/payouts via `PAY_TOKEN`. `requestSettlement`/`getWeather` are `onlyGateway` — callable only by the registered `gateway` address (`setGateway`) — and pull an optional per-call `feeToken` fee (any ERC-20, e.g. FXRP or a test USDT0) atomically via `transferFrom` from the payer the gateway names (`setFeeToken`/`setFeeRecipient`/`setFetchFee`/`setSettleFee`). The Next.js x402 routes at [`frontend/app/x402/weather/`](frontend/app/x402/weather/) front these two with a `402 Payment Required` → approve → retry handshake; the contract's own `transferFrom` is the actual enforcement, not the HTTP layer.
 
 ## Environment variables
 
@@ -128,9 +116,9 @@ Chain templates: `.env.coston2`, `.env.local.coston2` (and Coston variants). Swi
 | `extension-post-setup.sh` | `setTeeAddress` on contract |
 | `test.sh` | Full buy → settle policy demo |
 | `settle-policy.sh` | Keeper settle for one policy ID (must be run as the registered gateway) |
-| `sync-env.sh` | Propagate `extension.env` + `.env` → `frontend/.env` / `.env.local`; optional `--restart-gateway` |
+| `sync-env.sh` | Propagate `extension.env` + `.env` → `frontend/.env` / `.env.local` |
 
-`tools/cmd/x402-gateway` (run manually, not part of the scripted flow): `go run ./tools/cmd/x402-gateway` — loads `config/extension.env` automatically; HTTP facilitator the frontend calls for FETCH/SETTLE.
+The x402 gateway is implemented as Next.js route handlers (`frontend/app/x402/weather/*`); it starts automatically with `npm run dev`.
 
 ## Prerequisites
 

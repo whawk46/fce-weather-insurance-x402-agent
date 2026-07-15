@@ -38,14 +38,16 @@ tools/allow-*
 tools/deploy-*
 tools/register-*
 tools/run-*
-tools/x402-gateway
-
 # Private deployment notes
 DEPLOYMENT.md
 notes/
 
 # Node
 node_modules/
+
+# Local cloudflared quick tunnel (scripts/start-tunnel.sh)
+.cloudflared-tunnel.pid
+.cloudflared-tunnel.log
 
 # OS
 .DS_Store

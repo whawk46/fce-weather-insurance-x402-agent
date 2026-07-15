@@ -6,7 +6,7 @@ import { X402_GATEWAY_URL } from "@/lib/config";
 import type { ContractExecute } from "./private-buy";
 
 /**
- * Body of a 402 response from the x402 gateway (tools/cmd/x402-gateway).
+ * Body of a 402 response from the x402 gateway (Next.js /x402/weather/* routes).
  * Approve `amountBase` of `asset` to `spender` (the WeatherInsurance contract
  * itself — it pulls the fee via transferFrom when the gateway relays the
  * request), then retry. The gateway's pre-check here is a convenience; the
@@ -38,7 +38,7 @@ function isPaymentRequirements(body: unknown): body is PaymentRequirements {
  * x402 handshake against the payment gateway: POST the request (with `payer`
  * = the connected wallet), and on a 402 response approve the requested
  * feeToken amount to the WeatherInsurance contract before retrying. Mirrors
- * the Go side's tools/pkg/x402 Handler.requirePayment.
+ * the server-side requirePayment check in lib/server/x402-gateway.ts.
  */
 export async function payAndFetch<T>(
   resource: string,

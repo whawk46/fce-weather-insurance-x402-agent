@@ -4,9 +4,8 @@
 # Updates only known keys; leaves OPENAI_API_KEY, AI_MODEL, and other secrets alone.
 #
 # Usage:
-#   ./scripts/sync-env.sh                    # sync frontend/.env + frontend/.env.local
-#   ./scripts/sync-env.sh --env-only         # sync frontend/.env only (skip .env.local)
-#   ./scripts/sync-env.sh --restart-gateway  # sync then restart x402-gateway if running
+#   ./scripts/sync-env.sh            # sync frontend/.env + frontend/.env.local
+#   ./scripts/sync-env.sh --env-only # sync frontend/.env only (skip .env.local)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,13 +17,11 @@ warn() { echo -e "${YELLOW}[sync-env]${NC} $*"; }
 die()  { echo -e "${RED}[sync-env] ERROR:${NC} $*" >&2; exit 1; }
 
 SYNC_LOCAL=true
-RESTART_GATEWAY=false
 for arg in "$@"; do
   case "$arg" in
     --env-only) SYNC_LOCAL=false ;;
-    --restart-gateway) RESTART_GATEWAY=true ;;
     -h|--help)
-      sed -n '2,10p' "$0" | sed 's/^# \?//'
+      sed -n '2,9p' "$0" | sed 's/^# \?//'
       exit 0
       ;;
     *) die "Unknown argument: $arg (try --help)" ;;
@@ -47,8 +44,8 @@ set +a
 
 : "${INSTRUCTION_SENDER:?INSTRUCTION_SENDER not set in extension.env}"
 
-GATEWAY_PORT="${X402_GATEWAY_PORT:-7703}"
-GATEWAY_URL="http://localhost:${GATEWAY_PORT}"
+NEXT_PORT="${PORT:-3000}"
+GATEWAY_URL="http://localhost:${NEXT_PORT}"
 
 # --- Portable key setter (preserves unrelated lines) ---
 set_kv() {
@@ -95,20 +92,5 @@ if [[ "$SYNC_LOCAL" == true ]]; then
   sync_file "$PROJECT_DIR/frontend/.env.local"
 fi
 
-# --- Optional gateway restart ---
-if [[ "$RESTART_GATEWAY" == true ]]; then
-  if pkill -f "x402-gateway" 2>/dev/null; then
-    log "Stopped existing x402-gateway"
-    sleep 1
-  fi
-  mkdir -p "$PROJECT_DIR/config"
-  (
-    cd "$PROJECT_DIR/tools"
-    nohup go run ./cmd/x402-gateway > "$PROJECT_DIR/config/x402-gateway.log" 2>&1 &
-  )
-  log "Started x402-gateway (log: config/x402-gateway.log)"
-else
-  warn "Restart manually after contract/tunnel changes:"
-  warn "  cd tools && go run ./cmd/x402-gateway"
-  warn "  cd frontend && npm run dev   # NEXT_PUBLIC_* needs dev-server restart"
-fi
+warn "Restart Next.js after contract/tunnel changes:"
+warn "  cd frontend && npm run dev   # serves dApp + x402 gateway on /x402/weather/*"

@@ -25,10 +25,10 @@ export const INSTRUCTION_FEE_WEI = BigInt(
   process.env.NEXT_PUBLIC_INSTRUCTION_FEE_WEI ?? "1000000000000",
 );
 
-// Base URL of the x402 payment gateway (tools/cmd/x402-gateway), e.g.
-// "http://localhost:7703".
+// Base URL of the x402 payment gateway (Next.js /x402/weather/* routes), e.g.
+// "http://localhost:3000".
 export const X402_GATEWAY_URL =
-  process.env.NEXT_PUBLIC_X402_GATEWAY_URL ?? "http://localhost:7703";
+  process.env.NEXT_PUBLIC_X402_GATEWAY_URL ?? "http://localhost:3000";
 
 export const EXPLORER_TX_URL = "https://coston2-explorer.flare.network/tx/";
 export const EXPLORER_ADDRESS_URL =

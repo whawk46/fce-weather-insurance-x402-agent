@@ -1,4 +1,3 @@
-import * as ecies from "ecies-geth";
 import {
   type Address,
   encodeAbiParameters,
@@ -52,8 +51,9 @@ export async function encryptForTee(
   publicKey: TeePublicKey,
   plaintext: Uint8Array,
 ): Promise<Uint8Array> {
+  const { encrypt } = await import("ecies-geth");
   const pub = teePublicKeyToBuffer(publicKey);
-  const ciphertext = await ecies.encrypt(pub, Buffer.from(plaintext));
+  const ciphertext = await encrypt(pub, Buffer.from(plaintext));
   return Uint8Array.from(ciphertext);
 }
 
