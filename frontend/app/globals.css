@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f3f4f6;
+  --foreground: #232323;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  --color-flare-primary: #e62058;
+  --color-flare-primary-hover: #a11041;
+  --color-flare-primary-dark: #c10f45;
+  --color-flare-ink: #232323;
+  --color-flare-muted: #5a5a5a;
+  --color-flare-subtle: #777777;
+  --color-flare-surface: #fff1f3;
+  --color-flare-surface-strong: #ffe4e8;
+  --color-flare-border: #ffccd5;
+  --color-flare-border-mid: #ffa2b4;
+  --color-flare-accent: #fd6f8c;
+  --color-flare-ring: #f73c68;
+}
+
+html {
+  color-scheme: light only;
+  font-size: 1.0625rem;
+  min-height: 100dvh;
+  background-color: var(--background);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}

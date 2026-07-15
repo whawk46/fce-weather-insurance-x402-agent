@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "weather-insurance": {
+      "type": "stdio",
+      "command": "npm",
+      "args": [
+        "run",
+        "mcp",
+        "--prefix",
+        "frontend"
+      ],
+      "env": {}
+    }
+  }
+}

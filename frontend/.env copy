@@ -1,0 +1,21 @@
+# Coston2 (flareTestnet, chain id 114)
+NEXT_PUBLIC_CHAIN_ID=114
+NEXT_PUBLIC_RPC_URL=https://coston2-api.flare.network/ext/C/rpc
+
+# From config/extension.env after pre-build.sh
+NEXT_PUBLIC_WEATHER_INSURANCE=0xb8713B8855C6B06bEf38E25B5Cf5B013f1022C3A
+NEXT_PUBLIC_PAY_TOKEN=0x53192e788991AD96bC180249B15AefB94E597dD1
+
+# Extension proxy — used by Next.js API routes (server-side only).
+# Local stack: http://127.0.0.1:6674 (docker maps host 6674 → proxy 6664).
+# Coston2 on-chain + remote TEE: ngrok https URL from `ngrok http 6674`.
+EXT_PROXY_URL=http://127.0.0.1:6674
+
+# Optional fallback when EXT_PROXY_URL is stale (e.g. dead ngrok). Tried after primary fails.
+EXT_PROXY_LOCAL_URL=http://127.0.0.1:6674
+
+# Instruction fee forwarded to TEE registry (matches tools DefaultFee = 1e12 wei)
+NEXT_PUBLIC_INSTRUCTION_FEE_WEI=1000000000000
+
+# Server-side geocoding for buy policy (City,CC → lat/lon). Same key as the TEE extension.
+OPENWEATHERMAP_API_KEY=2edef81c71128117ffb87ca42aa01fc2
