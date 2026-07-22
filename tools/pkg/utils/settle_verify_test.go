@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	csigning "github.com/flare-foundation/go-flare-common/pkg/signing"
 	teetypes "github.com/flare-foundation/tee-node/pkg/types"
 	teeutils "github.com/flare-foundation/tee-node/pkg/utils"
 )
@@ -17,16 +18,20 @@ import (
 // WeatherInsurance.settle() recovers the TEE address from a node-style signature.
 //
 // It uses the REAL node primitives — teetypes.ActionResult.Hash() (what the node
-// hashes) and teeutils.Sign (what the node signs with) — then reconstructs the
-// hash exactly as the Solidity does:
+// hashes), csigning.NewPayload(TEEActionResult, …) (domain separation), and
+// teeutils.Sign (what the node signs with) — then reconstructs the hash exactly
+// as the Solidity does:
 //
-//	resultHash = keccak256(abi.encodePacked(keccak256(data), id, keccak256(tag), status))
-//	ethHash    = keccak256("\x19Ethereum Signed Message:\n32" || resultHash)
-//	signer     = ecrecover(ethHash, sig)
+//	resultHash  = keccak256(abi.encodePacked(keccak256(data), id, keccak256(tag), status))
+//	payloadHash = keccak256(abi.encode(TEE_ACTION_RESULT, chainId, resultHash))
+//	ethHash     = keccak256("\x19Ethereum Signed Message:\n32" || payloadHash)
+//	signer      = ecrecover(ethHash, sig)
 //
 // and asserts the recovered address equals the signer. If the Solidity formula
 // or field order ever drifts from the node's, this test fails.
 func TestSettleSignatureMatchesContract(t *testing.T) {
+	const chainID uint64 = 114
+
 	key, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("genkey: %v", err)
@@ -52,9 +57,13 @@ func TestSettleSignatureMatchesContract(t *testing.T) {
 		Data:          data,
 	}
 
-	// What the node hashes and signs.
+	// What the node hashes and signs (domain-separated, chain-ID-bound).
 	nodeHash := ar.Hash()
-	sig, err := teeutils.Sign(nodeHash, key)
+	payloadHash, err := csigning.NewPayload(csigning.TEEActionResult, chainID, common.BytesToHash(nodeHash)).Hash()
+	if err != nil {
+		t.Fatalf("payload: %v", err)
+	}
+	sig, err := teeutils.Sign(payloadHash[:], key)
 	if err != nil {
 		t.Fatalf("sign: %v", err)
 	}
@@ -73,8 +82,16 @@ func TestSettleSignatureMatchesContract(t *testing.T) {
 		t.Fatalf("reconstructed resultHash != node ActionResult.Hash()\n recon=%x\n node =%x", resultHash, nodeHash)
 	}
 
-	// EIP-191 personal-sign prefix + ecrecover (mirrors _ethSigned + _recover).
-	ethHash := accounts.TextHash(resultHash)
+	// Domain-separated payload + EIP-191 personal-sign (mirrors Solidity).
+	reconPayload, err := csigning.NewPayload(csigning.TEEActionResult, chainID, common.BytesToHash(resultHash)).Hash()
+	if err != nil {
+		t.Fatalf("recon payload: %v", err)
+	}
+	if reconPayload != payloadHash {
+		t.Fatalf("reconstructed payloadHash != signed payloadHash")
+	}
+
+	ethHash := accounts.TextHash(payloadHash[:])
 	pub, err := crypto.SigToPub(ethHash, sig)
 	if err != nil {
 		t.Fatalf("ecrecover: %v", err)

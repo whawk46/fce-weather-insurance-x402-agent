@@ -242,11 +242,14 @@ contract WeatherInsurancePrivateBuyTest is Test {
         bytes32 actionId,
         string memory tag,
         uint8 status
-    ) internal pure returns (bytes memory) {
+    ) internal view returns (bytes memory) {
         bytes32 resultHash = keccak256(
             abi.encodePacked(keccak256(data), actionId, keccak256(bytes(tag)), status)
         );
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", resultHash));
+        // The TEE node signs a domain-separated payload over resultHash, not resultHash
+        // directly — mirrors TEE_ACTION_RESULT_PREFIX in InstructionSender.sol.
+        bytes32 payloadHash = keccak256(abi.encode(bytes32("TEE_ACTION_RESULT"), block.chainid, resultHash));
+        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, ethHash);
         return abi.encodePacked(r, s, v);
     }

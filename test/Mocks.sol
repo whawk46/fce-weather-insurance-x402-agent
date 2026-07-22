@@ -33,8 +33,10 @@ contract MockERC20 {
 }
 
 contract MockTeeExtensionRegistry is ITeeExtensionRegistry {
-    // counter > 1 so setExtensionId can resolve to extension id 1 (_extensionId must be non-zero).
-    uint256 public counter = 2;
+    // Public extension IDs start at FIRST_PUBLIC_EXTENSION_ID (0x10000); this
+    // mock assigns the registered instructions sender to that first ID.
+    uint256 public constant EXTENSION_ID = 0x10000;
+    uint256 public counter = EXTENSION_ID + 1;
     address public instructionsSender;
     bytes32 public lastInstructionId;
 
@@ -42,12 +44,12 @@ contract MockTeeExtensionRegistry is ITeeExtensionRegistry {
         instructionsSender = sender;
     }
 
-    function extensionsCounter() external view returns (uint256) {
+    function nextPublicExtensionId() external view returns (uint256) {
         return counter;
     }
 
     function getTeeExtensionInstructionsSender(uint256 extensionId) external view returns (address) {
-        if (extensionId == 1) {
+        if (extensionId == EXTENSION_ID) {
             return instructionsSender;
         }
         return address(0);

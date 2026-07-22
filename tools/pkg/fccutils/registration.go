@@ -121,6 +121,16 @@ func RegisterNode(s *support.Support, teeInfo *types.SignedTeeInfoResponse, host
 			logger.Infof("FTDC availability check already completed, skipping (from state file)")
 			instructionID = state.InstructionID
 		} else {
+			// Pre-flight: the availability check relies on the FTDC proxy's data
+			// providers cosigning an instruction tied to the current signing policy.
+			// If the proxy's signing policy is out of sync with the on-chain reward
+			// epoch, that cosign is rejected with 404 "no round" and the FDC proof
+			// never materializes. Fail fast here with a clear message instead of
+			// after a wasted on-chain tx + ~30s of polling.
+			if err := CheckFTDCProxyPolicyConsistency(s, ftdcTeeURL); err != nil {
+				return err
+			}
+
 			instructionID, err = RequestFTDCAvailabilityCheck(s, teeID, ftdcTee, teeAttestInstructionID)
 			if err != nil {
 				return err
@@ -172,12 +182,19 @@ func PreRegistration(
 		CodeHash:     teeInfo.MachineData.CodeHash,
 		Platform:     teeInfo.MachineData.Platform,
 		PublicKey:    machinemanager.PublicKey{X: teeInfo.MachineData.PublicKey.X, Y: teeInfo.MachineData.PublicKey.Y},
+		// Must carry the node's governanceHash: register() verifies the TEE
+		// signature over keccak(abi.encode(machineData)) including this field,
+		// so a zero value here would fail with InvalidTeePublicKeyOrSignature.
+		GovernanceHash: teeInfo.MachineData.GovernanceHash,
 	}
 
 	if len(teeInfo.DataSignature) != 65 {
 		return [32]byte{}, common.Hash{}, errors.New("signature error")
 	}
-	sigVRS := encoding.TransformSignatureRSVtoVRS(teeInfo.DataSignature)
+	sigVRS, err := encoding.TransformSignatureRSVtoVRS(teeInfo.DataSignature)
+	if err != nil {
+		return [32]byte{}, common.Hash{}, errors.Errorf("%s", err)
+	}
 
 	signature := machinemanager.Signature{
 		V: sigVRS[0],
@@ -324,10 +341,12 @@ func GetFTDCAvailabilityCheckResult(hostURL string, instructionId common.Hash) (
 	return &toProductionProof, nil
 }
 
-// teeStatusRegistered is the on-chain TeeStatus value that means "registered but
+// teeStatusInitialized is the on-chain TeeStatus value that means "registered but
 // not yet in production". ToProduction only succeeds from this state.
-// The Solidity enum is: 0=Registered, 1=Production, 2=Paused, 3=Banned.
-const teeStatusRegistered uint8 = 0
+// On-chain enum: { NONE, INITIALIZED, PRODUCTION, SUSPENDED, PAUSED, BANNED }
+// so INITIALIZED == 1. If the on-chain enum is ever reordered, this constant
+// must be updated to match.
+const teeStatusInitialized uint8 = 1
 
 func ToProduction(s *support.Support, toProductionProof *machinemanager.ITeeAvailabilityCheckProof) error {
 	teeID := toProductionProof.RequestBody.TeeId
@@ -336,8 +355,8 @@ func ToProduction(s *support.Support, toProductionProof *machinemanager.ITeeAvai
 		return errors.Errorf("failed to query TEE status: %s", err)
 	}
 	logger.Infof("TEE machine %s on-chain status=%d before toProduction", teeID.Hex(), status)
-	if status != teeStatusRegistered {
-		logger.Infof("TEE machine %s is not in registered state (status=%d), skipping toProduction", teeID.Hex(), status)
+	if status != teeStatusInitialized {
+		logger.Infof("TEE machine %s is not in initialized state (status=%d), skipping toProduction", teeID.Hex(), status)
 		return nil
 	}
 
@@ -367,13 +386,29 @@ func ToProduction(s *support.Support, toProductionProof *machinemanager.ITeeAvai
 	return nil
 }
 
-func AddTeeVersion(s *support.Support, privKey *ecdsa.PrivateKey, extensionId *big.Int, codeHash common.Hash, platform common.Hash, governanceHash common.Hash, version string) error {
+// stringToBytes32 packs an ASCII string into a bytes32, left-aligned and
+// zero-padded on the right. Errors if the string exceeds 32 bytes.
+func stringToBytes32(s string) ([32]byte, error) {
+	var b [32]byte
+	if len(s) > 32 {
+		return b, errors.Errorf("version %q exceeds 32 bytes", s)
+	}
+	copy(b[:], s)
+	return b, nil
+}
+
+func AddTeeVersion(s *support.Support, privKey *ecdsa.PrivateKey, extensionId *big.Int, codeHash common.Hash, platform common.Hash, version string) error {
 	opts, err := bind.NewKeyedTransactorWithChainID(privKey, s.ChainID)
 	if err != nil {
 		return errors.Errorf("%s", err)
 	}
 
-	tx, err := s.TeeExtensionRegistry.AddTeeVersion(opts, extensionId, version, codeHash, [][32]byte{platform}, governanceHash)
+	versionBytes, err := stringToBytes32(version)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.TeeExtensionRegistry.AddTeeVersion(opts, extensionId, versionBytes, codeHash, [][32]byte{platform})
 	if err != nil {
 		return errors.Errorf("TeeExtensionRegistry.AddTeeVersion failed: %s", err)
 	}

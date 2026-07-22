@@ -39,7 +39,16 @@ services:
         required: false
     environment:
       - MODE=${MODE:-1}
+      # Chain id the node binds signatures to — must match the proxy's chain_id
+      # and the chain itself. Defaults to Coston2 (114) like the base proxy
+      # config; the coston override sets 16. Override via CHAIN_ID in .env.
+      - CHAIN_ID=${CHAIN_ID:-114}
       - INITIAL_OWNER=${INITIAL_OWNER:-0xF4E021377420Afe90c1A7D2b8968904946633a64}
+      # TEE governance the node signs with. Must match what set-governance
+      # registers on-chain (post-build reads the same vars). Defaults to the
+      # deployer (INITIAL_OWNER) as sole signer, threshold 1; override in .env.
+      - GOVERNANCE_SIGNERS=${GOVERNANCE_SIGNERS:-${INITIAL_OWNER:-0xF4E021377420Afe90c1A7D2b8968904946633a64}}
+      - GOVERNANCE_THRESHOLD=${GOVERNANCE_THRESHOLD:-1}
       - PROXY_URL=http://ext-proxy:6663
       - CONFIG_PORT=5501
       - SIGN_PORT=7701

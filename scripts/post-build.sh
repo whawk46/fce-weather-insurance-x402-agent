@@ -127,17 +127,29 @@ go run ./cmd/allow-tee-version \
     -version "$TEE_VERSION" \
     || die "Allow TEE version failed"
 
+# --- Step 2: Set TEE governance on extension ---
+# Registers the governance signer set + threshold the TEE node signs with.
+# Reads GOVERNANCE_SIGNERS / GOVERNANCE_THRESHOLD (default: deployer, threshold 1)
+# and MUST match the same vars passed to the TEE node container, or register-tee
+# fails with InvalidGovernanceHash.
+step 2 "Set TEE governance"
+go run ./cmd/set-governance \
+    -a "$ADDRESSES_FILE" \
+    -c "$CHAIN_URL" \
+    -p "$EXT_PROXY_URL" \
+    || die "Set TEE governance failed"
+
 # Export SIMULATED_TEE for register-tee (controls attestation mode)
 export SIMULATED_TEE="${SIMULATED_TEE:-true}"
 log "Simulated TEE: $SIMULATED_TEE"
 
-# --- Step 2: Register TEE on-chain ---
+# --- Step 3: Register TEE on-chain ---
 # Command 'rRap': r=pre-register (skips if already on-chain), R=issue a FRESH
 # attestation challenge, a=FTDC availability check, p=promote to production.
 # The capital 'R' is required so re-runs get a fresh challenge — without it the
 # availability check reverts with Verification.ChallengeExpired once the machine
 # is already registered. Override via REGISTER_TEE_COMMAND.
-step 2 "Register TEE machine"
+step 3 "Register TEE machine"
 go run ./cmd/register-tee \
     -a "$ADDRESSES_FILE" \
     -c "$CHAIN_URL" \

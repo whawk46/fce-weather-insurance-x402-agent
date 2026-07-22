@@ -119,10 +119,10 @@ VERIFY_ARGS=(
 [[ -n "${CHAIN_URL:-}" ]] && VERIFY_ARGS+=(--rpc-url "$CHAIN_URL")
 # shellcheck disable=SC2207
 VERIFY_ARGS+=($(foundry_chain_args))
-# forge also reads CHAIN from env — avoid coston2 leaking in
-unset CHAIN
-
-if forge verify-contract "${VERIFY_ARGS[@]}"; then
+# forge also reads CHAIN from env — hide it from forge's subprocess only
+# (a plain `unset CHAIN` would also remove it for our own reference below,
+# which trips `set -u`).
+if env -u CHAIN forge verify-contract "${VERIFY_ARGS[@]}"; then
     log "Contract verified on $CHAIN explorer."
 else
     warn "Verification did not complete (non-fatal). You can retry later:"
