@@ -20,14 +20,34 @@ Parametric rainfall insurance TEE extension for Flare Coston / Coston2.
 
 ## Indexer DB credentials
 
-The `ext-proxy` reads Flare's indexer DB. Create the chain-specific docker config (gitignored) from the example:
+The `ext-proxy` queries Flare's **indexer DB** for TEE events and instruction
+responses. Credentials are **chain-specific**, read-only throwaway values —
+obtain `username` / `password` from your **Flare TEE contact or devops** (same
+creds used by other FCC extensions on that chain). Do not cross Coston and
+Coston2 values.
+
+Create the chain-specific docker config (gitignored) from the example, then fill
+`[db]`:
 
 ```bash
 cp config/proxy/extension_proxy.coston2.docker.toml.example \
    config/proxy/extension_proxy.coston2.docker.toml
 ```
 
-Fill `[db]` per chain — see the example file and the sign extension doc for Coston2/Coston host credentials. Wrong or missing DB config causes `test.sh` to fail the round-trip.
+### Coston2 (no VPN)
+
+```toml
+[db]
+host     = "34.38.42.208"
+port     = 3306
+database = "indexer"
+username = "<from Flare>"
+password = "<from Flare>"
+log_queries = false
+```
+
+Wrong or missing DB config (or unreachable host) causes `test.sh` to fail the
+round-trip — the proxy never sees instruction responses.
 
 ## Repository layout
 

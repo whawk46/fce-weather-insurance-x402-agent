@@ -6,29 +6,63 @@ A Flare Confidential Compute (FCC) extension that settles **parametric rainfall 
 
 See **[DEPLOYMENT_STEPS.md](DEPLOYMENT_STEPS.md)** for the full walkthrough. Summary:
 
-```bash
-# 1. Configure .env.local.coston2 (keys, OPENWEATHERMAP_API_KEY, PAY_TOKEN)
-bash ./scripts/use-chain.sh local coston2
+1. **Configure** `.env.local.coston2` (keys, `OPENWEATHERMAP_API_KEY`, `PAY_TOKEN`), then activate:
 
-# 2. Deploy contract + register extension
-bash ./scripts/pre-build.sh
-bash ./scripts/extension-setup.sh
+   ```bash
+   ./scripts/use-chain.sh local coston2
+   ```
 
-# 3. Tunnel :6674 publicly (ngrok http 6674, or cloudflared tunnel --url http://localhost:6674
-#    if you don't have an ngrok account) → set EXT_PROXY_URL in .env.local.coston2 → use-chain again
+2. **Deploy** the contract and register the extension:
 
-# 4. Indexer DB config + Docker stack
-cp config/proxy/extension_proxy.coston2.docker.toml.example \
-   config/proxy/extension_proxy.coston2.docker.toml
-bash ./scripts/start-services.sh
+   ```bash
+   ./scripts/pre-build.sh
+   ./scripts/extension-setup.sh
+   ```
 
-# 5. On-chain TEE registration + policy demo
-bash ./scripts/post-build.sh
-bash ./scripts/extension-post-setup.sh
-bash ./scripts/test.sh
+3. **Tunnel** port `6674` publicly — pick one:
 
-bash ./scripts/stop-services.sh
-```
+   ```bash
+   ngrok http 6674
+   # or, no ngrok account needed:
+   cloudflared tunnel --url http://localhost:6674
+   ```
+
+   Set `EXT_PROXY_URL` in `.env.local.coston2` to the tunnel HTTPS URL, then:
+
+   ```bash
+   ./scripts/use-chain.sh local coston2
+   ```
+
+4. **Indexer DB** — copy the example (gitignored; holds credentials):
+
+   ```bash
+   cp config/proxy/extension_proxy.coston2.docker.toml.example \
+      config/proxy/extension_proxy.coston2.docker.toml
+   ```
+
+   Fill `[db]` with Flare's read-only indexer credentials for Coston2
+   (`host` / `username` / `password`). Ask your Flare TEE contact / devops
+   for them.
+
+5. **Start** the Docker stack (redis + ext-proxy + extension-tee):
+
+   ```bash
+   ./scripts/start-services.sh
+   ```
+
+6. **Register** the TEE on-chain and run the policy demo:
+
+   ```bash
+   ./scripts/post-build.sh
+   ./scripts/extension-post-setup.sh
+   ./scripts/test.sh
+   ```
+
+7. **Tear down** when finished:
+
+   ```bash
+   ./scripts/stop-services.sh
+   ```
 
 ## Web frontend (Coston2)
 
