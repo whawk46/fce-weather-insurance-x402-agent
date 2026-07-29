@@ -152,4 +152,5 @@ TEE extension must be running; contract `teeAddress` must be set (`extension-pos
 
 - [frontend-weather-fetch.md](frontend-weather-fetch.md) — `getWeather` + poll + decode flow
 - [testing.md](testing.md) — Go `run-test` private buy and Solidity unit tests
-- [DEPLOYMENT_STEPS.md](../DEPLOYMENT_STEPS.md) — local stack and ngrok
+- [README.md](../README.md) — local stack and tunnel setup
+- [deployment-steps.md](deployment-steps.md) — Confidential Space deploy

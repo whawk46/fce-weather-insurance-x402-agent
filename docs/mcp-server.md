@@ -147,3 +147,4 @@ frontend/app/api/mcp/
 - [frontend-agent.md](./frontend-agent.md) — in-app chat assistant
 - [frontend-weather-fetch.md](./frontend-weather-fetch.md) — x402 FETCH flow
 - [frontend-private-buy.md](./frontend-private-buy.md) — ECIES private buy
+- [README](../README.md) — local stack prerequisites

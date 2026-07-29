@@ -24,10 +24,10 @@ where they are built.
 
 ## Build context
 
-The build context must be the parent `tee/` directory, not the `sign/`
-directory itself. This is because `go/go.mod` declares
-`replace github.com/flare-foundation/tee-node => ../../../tee-node`, so the
-builder needs both `tee-node/` and `extensions/weather-insurance/` visible side-by-side.
+Build context is **this extension directory** (`.`). The module pulls
+`github.com/flare-foundation/tee-node` from the network (pinned in `go.mod` /
+`go.sum`) — no on-disk sibling `tee-node` checkout or `replace` directive is
+required. See the comment at the top of [`Dockerfile`](Dockerfile).
 
 ## Verifying a remote image
 
@@ -41,16 +41,7 @@ Create the builder (one-time setup):
 docker buildx create --driver=docker-container --name=moby-buildkit --driver-opt image=moby/buildkit --bootstrap
 ```
 
-Clone the repositories so `tee-node/` and `extensions/weather-insurance/` sit next to each
-other under a shared parent (matches the layout the Dockerfile expects):
-
-```sh
-mkdir tee && cd tee
-git clone https://github.com/flare-foundation/tee-node.git
-# (clone weather-insurance into extensions/weather-insurance here)
-```
-
-Then from `tee/extensions/weather-insurance/`:
+From this repo root:
 
 ```sh
 TAG=$(git describe --tags --abbrev=0)
@@ -59,7 +50,7 @@ git checkout "$TAG"
 docker buildx build --builder moby-buildkit --platform linux/amd64 --no-cache \
   --build-arg SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) \
   --output "type=docker,rewrite-timestamp=true" \
-  -t local/weather-insurance:verify --load -f Dockerfile ../..
+  -t local/weather-insurance:verify --load -f Dockerfile .
 
 docker pull --platform linux/amd64 <registry>/weather-insurance:"$TAG"
 

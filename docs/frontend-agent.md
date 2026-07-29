@@ -74,3 +74,4 @@ frontend/
 - [frontend-weather-fetch.md](./frontend-weather-fetch.md) — x402 FETCH flow
 - [frontend-private-buy.md](./frontend-private-buy.md) — ECIES private buy
 - [mcp-server.md](./mcp-server.md) — MCP server for Cursor / external agents
+- [README](../README.md) — stack setup and prerequisites (including `OPENAI_API_KEY`)
